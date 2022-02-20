@@ -13,7 +13,6 @@ RUN \
         libgd \
         libffi \
         gettext-libs
-
 RUN \
     # 编译环境
     apk add --no-cache --virtual .build-deps \
@@ -37,7 +36,7 @@ RUN \
       bz2 \
       calendar \
       exif
-RUN \
+RUN docker-php-ext-install \
       ffi \
       gd \
       gettext \

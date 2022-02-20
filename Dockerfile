@@ -3,8 +3,7 @@ FROM php:7.4.28-fpm-alpine3.15
 RUN \
     # 替换 apk 源
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-    apk update --no-cache && apk upgrade --no-cache && \
-    apk add --no-cache \
+    apk update --no-cache && apk upgrade --no-cache && apk add --no-cache \
         argon2-libs \
         bash \
         brotli-libs \
@@ -27,8 +26,7 @@ RUN \
         tidyhtml-libs \
         xz-libs && \
     # 编译环境
-    apk add --no-cache --virtual .build-deps \
-        $PHPIZE_DEPS \
+    apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
         argon2-dev \
         brotli-dev \
         brotli-dev \

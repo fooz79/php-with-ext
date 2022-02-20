@@ -31,6 +31,7 @@ RUN \
         gdbm-dev \
         gettext-dev \
         imap-dev \
+        icu-dev \
         libffi-dev \
         openldap-dev \
         openssl-dev \
@@ -38,7 +39,6 @@ RUN \
         pcre2-dev \
         mysql-dev \
         zlib-dev
-RUN
 RUN \
     # 编译 PHP 扩展
     docker-php-ext-install \

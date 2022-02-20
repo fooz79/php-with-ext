@@ -3,7 +3,7 @@ FROM php:7.4.28-fpm-alpine3.15
 RUN \
     # 替换 apk 源
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-    apk update --no-cache && apk upgrade --no-cache \
+    apk update --no-cache && apk upgrade --no-cache && \
     apk add --no-cache \
         bash \
         brotli-libs \

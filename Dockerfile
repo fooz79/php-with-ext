@@ -9,7 +9,11 @@ RUN \
         curl \
         libbz2 \
         libstdc++ \
-        brotli-libs
+        brotli-libs \
+        libgd \
+        libffi \
+        gettext-libs
+
 RUN \
     # 编译环境
     apk add --no-cache --virtual .build-deps \
@@ -22,7 +26,10 @@ RUN \
         pcre2-dev \
         zlib-dev \
         bzip2-dev \
-        brotli-dev
+        brotli-dev \
+        libffi-dev \
+        gd-dev \
+        gettext-dev
 RUN \
     # 编译 PHP 扩展
     docker-php-ext-install \

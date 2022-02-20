@@ -20,6 +20,7 @@ ARG SWOOLE_VER=4.8.7
 ARG UUID_VER=1.2.0
 ARG YAML_VER=2.2.2
 ARG ZEPHIR_VER=1.5.0
+ARG COMPOSER_VER=2.2.6
 
 RUN \
     # 替换 apk 源
@@ -36,6 +37,7 @@ RUN \
         imagemagick-libs \
         libbz2 \
         libedit \
+        libevent \
         libffi \
         libgcrypt \
         libgd \
@@ -241,7 +243,7 @@ RUN \
     docker-php-ext-enable --ini-name 00_sodium.ini sodium && \
     docker-php-ext-enable --ini-name 00_opcache.ini opcache && \
     # 安装 OpenRC
-    apk add --no-cache openrc bash && \
+    apk add --no-cache openrc bash vim && \
     # Disable getty's
     sed -i 's/^\(tty\d\:\:\)/#\1/g' /etc/inittab && \
     # Change rc.conf
@@ -268,6 +270,11 @@ RUN \
     echo "PS1='\033[1;33m\h \033[1;34m[\w] \033[1;35m\D{%D %T}\n\[\033[1;36m\]\u@\l \[\033[00m\]\$ '" > /root/.bashrc && \
     echo "alias ll='ls -l'" >> /root/.bashrc && \
     # 清理构建过程临时文件
-    docker-php-source delete && apk del .build-deps && rm -rf /tmp/*
+    docker-php-source delete && apk del .build-deps && rm -rf /tmp/* && \
+    # 链接常用路径
+    ln -s /usr/local/bin/php /usr/bin/ && ln -s /usr/local/etc/php /etc/ && ln -s /usr/local/etc/php-fpm.d /etc/ && \
+    # Composer
+    curl -sfL https://getcomposer.org/download/${COMPOSER_VER}/composer.phar -o /usr/bin/composer && \
+    chmod +x /usr/bin/composer && composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/
 
 CMD ["/sbin/init"]

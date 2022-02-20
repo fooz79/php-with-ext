@@ -26,9 +26,37 @@ RUN \
 RUN \
     # 编译 PHP 扩展
     docker-php-ext-install \
-      sockets \
       bcmath \
-      bz2
+      bz2 \
+      calendar \
+      exif \
+      ffi \
+      gd \
+      gettext \
+      iconv \
+      imap \
+      intl \
+      ldap \
+      mysqli \
+      opcache \
+      pcntl \
+      pdo \
+      pdo_mysql \
+      pdo_pgsql \
+      pdo_sqlite \
+      pgsql \
+      phar \
+      shmop \
+      snmp \
+      soap \
+      sockets \
+      sysvmsg \
+      sysvsem \
+      sysvshm \
+      tidy \
+      xmlrpc \
+      xsl \
+      zip
 RUN \
     # 清理环境
     docker-php-source delete && \

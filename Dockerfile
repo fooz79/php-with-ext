@@ -5,6 +5,7 @@ RUN \
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
     apk update --no-cache && apk upgrade --no-cache && \
     apk add --no-cache \
+        argon2-libs \
         bash \
         brotli-libs \
         c-client \
@@ -13,22 +14,22 @@ RUN \
         gettext-libs \
         icu-libs \
         libbz2 \
+        libedit \
         libffi \
         libgd \
         libldap \
-        libsasl \
         libpq \
-        argon2-libs \
+        libsasl \
+        libstdc++ \
         libxml2 \
-        xz-libs \
-        pcre2 \
-        libedit \
         net-snmp-libs \
-        libstdc++
-RUN \
+        pcre2 \
+        tidyhtml-libs \
+        xz-libs && \
     # 编译环境
     apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
+        argon2-dev \
         brotli-dev \
         brotli-dev \
         build-base \
@@ -37,43 +38,38 @@ RUN \
         gd-dev \
         gdbm-dev \
         gettext-dev \
-        imap-dev \
         icu-dev \
+        imap-dev \
+        libedit-dev \
         libffi-dev \
+        libpq-dev \
+        libxml2-dev \
+        mysql-dev \
+        net-snmp-dev \
         openldap-dev \
         pcre-dev \
         pcre2-dev \
-        mysql-dev \
-        libpq-dev \
-        libedit-dev \
-        argon2-dev \
-        libxml2-dev \
-        net-snmp-dev \
-        zlib-dev
-RUN \
+        tidyhtml-dev \
+        zlib-dev && \
     # 编译 PHP 扩展
-    docker-php-ext-install \
+    docker-php-ext-install -j $(nproc) \
       bcmath \
       bz2 \
       calendar \
-      exif
-RUN docker-php-ext-install \
+      exif \
       ffi \
       gd \
       gettext \
-      iconv
-RUN docker-php-ext-install \
+      iconv \
       imap \
       intl \
       ldap \
       mysqli \
       pcntl \
       pdo \
-      pdo_mysql
-RUN docker-php-ext-install \
+      pdo_mysql \
       pdo_pgsql \
-      pgsql
-RUN docker-php-ext-install \
+      pgsql \
       phar \
       shmop \
       snmp \
@@ -85,12 +81,10 @@ RUN docker-php-ext-install \
       tidy \
       xmlrpc \
       xsl \
-      zip
-RUN \
-    # 清理环境
+      zip && \
+    # 清理编译环境
     docker-php-source delete && \
-    apk del .build-deps
-RUN \
+    apk del .build-deps && \
     # 启用 opcache
     docker-php-ext-enable opcache && \
     # 修改 bashrc

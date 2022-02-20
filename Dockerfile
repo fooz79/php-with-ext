@@ -36,7 +36,8 @@ RUN \
       bcmath \
       bz2 \
       calendar \
-      exif \
+      exif
+RUN \
       ffi \
       gd \
       gettext \

@@ -25,8 +25,11 @@ RUN \
         brotli-dev
 RUN \
     # 编译 PHP 扩展
-    docker-php-ext-install sockets && \
-    docker-php-ext-install bz2
+    docker-php-ext-install \
+      sockets && \
+      bcmath && \
+
+      bz2
 RUN \
     # 清理环境
     docker-php-source delete && \

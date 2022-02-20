@@ -6,29 +6,38 @@ RUN \
     apk update --no-cache && \
     apk add --no-cache \
         bash \
-        curl \
-        libbz2 \
-        libstdc++ \
         brotli-libs \
-        libgd \
+        c-client \
+        curl \
+        gdbm \
+        gettext-libs \
+        icu-libs \
+        libbz2 \
         libffi \
-        gettext-libs
+        libgd \
+        libldap \
+        libsasl \
+        libstdc++
 RUN \
     # 编译环境
     apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
         brotli-dev \
+        brotli-dev \
         build-base \
+        bzip2-dev \
         curl-dev \
+        gd-dev \
+        gdbm-dev \
+        gettext-dev \
+        imap-dev \
+        libffi-dev \
+        openldap-dev \
         openssl-dev \
         pcre-dev \
         pcre2-dev \
-        zlib-dev \
-        bzip2-dev \
-        brotli-dev \
-        libffi-dev \
-        gd-dev \
-        gettext-dev
+        mysql-dev \
+        zlib-dev
 RUN \
     # 编译 PHP 扩展
     docker-php-ext-install \
@@ -40,7 +49,8 @@ RUN docker-php-ext-install \
       ffi \
       gd \
       gettext \
-      iconv \
+      iconv
+RUN docker-php-ext-install \
       imap \
       intl \
       ldap \

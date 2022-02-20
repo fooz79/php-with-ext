@@ -26,9 +26,8 @@ RUN \
 RUN \
     # 编译 PHP 扩展
     docker-php-ext-install \
-      sockets && \
-      bcmath && \
-
+      sockets \
+      bcmath \
       bz2
 RUN \
     # 清理环境

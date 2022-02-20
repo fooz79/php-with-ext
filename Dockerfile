@@ -34,5 +34,9 @@ RUN \
     # 清理环境
     docker-php-source delete && \
     apk del .build-deps
+RUN \
+    # 修改 bashrc
+    echo "PS1='\033[1;33m\h \033[1;34m[\w] \033[1;35m\D{%D %T}\n\[\033[1;36m\]\u@\l \[\033[00m\]\$ '" > /root/.bashrc && \
+    echo "alias ll='ls -l'" >> /root/.bashrc
 
 WORKDIR "/var/www/"

@@ -3,7 +3,7 @@ FROM php:7.4.28-fpm-alpine3.15
 RUN \
     # 替换 apk 源
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-    apk update --no-cache && \
+    apk update --no-cache && apk upgrade --no-cache \
     apk add --no-cache \
         bash \
         brotli-libs \
@@ -17,6 +17,13 @@ RUN \
         libgd \
         libldap \
         libsasl \
+        libpq \
+        argon2-libs \
+        libxml2 \
+        xz-libs \
+        pcre2 \
+        libedit \
+        net-snmp-libs \
         libstdc++
 RUN \
     # 编译环境
@@ -34,10 +41,14 @@ RUN \
         icu-dev \
         libffi-dev \
         openldap-dev \
-        openssl-dev \
         pcre-dev \
         pcre2-dev \
         mysql-dev \
+        libpq-dev \
+        libedit-dev \
+        argon2-dev \
+        libxml2-dev \
+        net-snmp-dev \
         zlib-dev
 RUN \
     # 编译 PHP 扩展
@@ -58,10 +69,11 @@ RUN docker-php-ext-install \
       mysqli \
       pcntl \
       pdo \
-      pdo_mysql \
+      pdo_mysql
+RUN docker-php-ext-install \
       pdo_pgsql \
-      pdo_sqlite \
-      pgsql \
+      pgsql
+RUN docker-php-ext-install \
       phar \
       shmop \
       snmp \

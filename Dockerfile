@@ -38,6 +38,7 @@ RUN \
         pcre2-dev \
         mysql-dev \
         zlib-dev
+RUN
 RUN \
     # 编译 PHP 扩展
     docker-php-ext-install \
@@ -55,7 +56,6 @@ RUN docker-php-ext-install \
       intl \
       ldap \
       mysqli \
-      opcache \
       pcntl \
       pdo \
       pdo_mysql \
@@ -79,8 +79,11 @@ RUN \
     docker-php-source delete && \
     apk del .build-deps
 RUN \
+    # 启用 opcache
+    docker-php-ext-enable opcache && \
     # 修改 bashrc
     echo "PS1='\033[1;33m\h \033[1;34m[\w] \033[1;35m\D{%D %T}\n\[\033[1;36m\]\u@\l \[\033[00m\]\$ '" > /root/.bashrc && \
     echo "alias ll='ls -l'" >> /root/.bashrc
+
 
 WORKDIR "/var/www/"

@@ -281,6 +281,87 @@ RUN \
     #     docker-php-ext-install -j$(nproc) --ini-name 10-imagick.ini imagick && \
     #     apk del .ext-imagick-deps; \
     # fi && \
+    # if test ${EXTRA_INOTIFY_ENABLE} = true; then \
+    #     curl -sfL https://github.com/arnaud-lb/php-inotify/archive/refs/tags/${EXTRA_INOTIFY_VERSION}.tar.gz -o /tmp/inotify.tar.gz && \
+    #     mkdir /usr/src/php/ext/inotify && tar xfz /tmp/inotify.tar.gz --strip-components=1 -C /usr/src/php/ext/inotify && \
+    #     docker-php-ext-configure inotify && \
+    #     docker-php-ext-install -j$(nproc) --ini-name 10-inotify.ini inotify ; \
+    # fi && \
+    # if test ${EXTRA_LZF_ENABLE} = true; then \
+    #     curl -sfL https://github.com/php/pecl-file_formats-lzf/archive/refs/tags/LZF-${EXTRA_LZF_VERSION}.tar.gz -o /tmp/lzf.tar.gz && \
+    #     mkdir /usr/src/php/ext/lzf && tar xfz /tmp/lzf.tar.gz --strip-components=1 -C /usr/src/php/ext/lzf && \
+    #     apk add --no-cache liblzf && \
+    #     apk add --no-cache --virtual .ext-liblzf-deps liblzf-dev && \
+    #     docker-php-ext-configure lzf && \
+    #     docker-php-ext-install -j$(nproc) --ini-name 10-lzf.ini lzf && \
+    #     apk del .ext-liblzf-deps; \
+    # fi && \
+    if test ${EXTRA_MONGODB_ENABLE} = true; then \
+        git clone -q -b ${EXTRA_MONGODB_VERSION} --depth 1 https://github.com/mongodb/mongo-php-driver.git /usr/src/php/ext/mongodb && \
+        cd /usr/src/php/ext/mongodb && git submodule update --init && \
+            apk add --no-cache snappy icu-libs libsasl libcrypto1.1 zstd-libs && \
+            apk add --no-cache --virtual .ext-mongodb-deps openssl-dev icu-dev snappy-dev zstd-dev cyrus-sasl-dev && \
+            docker-php-ext-configure mongodb && \
+            docker-php-ext-install -j$(nproc) --ini-name 10-mongodb.ini mongodb ; \
+        apk del .ext-mongodb-deps; \
+    fi && \
+    # curl -sfL https://github.com/msgpack/msgpack-php/archive/refs/tags/msgpack-${MSGPACK}.tar.gz -o /tmp/msgpack.tar.gz && \
+    # mkdir /usr/src/php/ext/msgpack && tar xfz /tmp/msgpack.tar.gz --strip-components=1 -C /usr/src/php/ext/msgpack && \
+    # docker-php-ext-configure msgpack && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_msgpack.ini msgpack && \
+    # # mcrypt
+    # curl -sfL https://github.com/php/pecl-encryption-mcrypt/archive/refs/tags/${MCRYPT}.tar.gz -o /tmp/mcrypt.tar.gz && \
+    # mkdir /usr/src/php/ext/mcrypt && tar xfz /tmp/mcrypt.tar.gz --strip-components=1 -C /usr/src/php/ext/mcrypt && \
+    # docker-php-ext-configure mcrypt && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_mcrypt.ini mcrypt && \
+    # # protobuf
+    # curl -sfL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF}/protobuf-php-${PROTOBUF}.tar.gz -o /tmp/protobuf.tar.gz && \
+    # mkdir /tmp/protobuf && tar xfz /tmp/protobuf.tar.gz --strip-components=1 -C /tmp/protobuf && \
+    # mv /tmp/protobuf/php/ext/google/protobuf /usr/src/php/ext/ && \
+    # docker-php-ext-configure protobuf && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_protobuf.ini protobuf && \
+    # # psr
+    # curl -sfL https://github.com/jbboehr/php-psr/archive/refs/tags/v${PSR}.tar.gz -o /tmp/psr.tar.gz && \
+    # mkdir /usr/src/php/ext/psr && tar xfz /tmp/psr.tar.gz --strip-components=1 -C /usr/src/php/ext/psr && \
+    # docker-php-ext-configure psr && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_psr.ini psr && \
+    # # lz4
+    # curl -sfL https://github.com/kjdev/php-ext-lz4/archive/refs/tags/${LZ4}.tar.gz -o /tmp/lz4.tar.gz && \
+    # mkdir /usr/src/php/ext/lz4 && tar xfz /tmp/lz4.tar.gz --strip-components=1 -C /usr/src/php/ext/lz4 && \
+    # docker-php-ext-configure lz4 --with-lz4-includedir=/usr && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_lz4.ini lz4 && \
+    # # redis
+    # curl -sfL https://github.com/phpredis/phpredis/archive/refs/tags/${REDIS}.tar.gz -o /tmp/redis.tar.gz && \
+    # mkdir /usr/src/php/ext/redis && tar xfz /tmp/redis.tar.gz --strip-components=1 -C /usr/src/php/ext/redis && \
+    # docker-php-ext-configure redis \
+    #     --enable-redis-igbinary --enable-redis-msgpack \
+    #     --enable-redis-lzf --with-liblzf=/usr --enable-redis-zstd --enable-redis-lz4 --with-liblz4=/usr && \
+    # docker-php-ext-install -j$(nproc) --ini-name 40_redis.ini redis && \
+    # # uuid
+    # curl -sfL https://github.com/php/pecl-networking-uuid/archive/refs/tags/uuid-${UUID}.tar.gz -o /tmp/uuid.tar.gz && \
+    # mkdir /usr/src/php/ext/uuid && tar xfz /tmp/uuid.tar.gz --strip-components=1 -C /usr/src/php/ext/uuid && \
+    # docker-php-ext-configure uuid && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_uuid.ini uuid && \
+    # # yaml
+    # curl -sfL https://github.com/php/pecl-file_formats-yaml/archive/refs/tags/${YAML}.tar.gz -o /tmp/yaml.tar.gz && \
+    # mkdir /usr/src/php/ext/yaml && tar xfz /tmp/yaml.tar.gz --strip-components=1 -C /usr/src/php/ext/yaml && \
+    # docker-php-ext-configure yaml && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_yaml.ini yaml && \
+    # # csv
+    # curl -sfL https://gitlab.com/Girgias/csv-php-extension/-/archive/${CSV}/csv-php-extension-${CSV}.tar.gz -o /tmp/csv.tar.gz && \
+    # mkdir /usr/src/php/ext/csv && tar xfz /tmp/csv.tar.gz --strip-components=1 -C /usr/src/php/ext/csv && \
+    # docker-php-ext-configure csv && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_csv.ini csv && \
+    # # zephir-parser
+    # curl -sfL https://github.com/zephir-lang/php-zephir-parser/archive/refs/tags/v${ZEPHIR}.tar.gz -o /tmp/zephir.tar.gz && \
+    # mkdir /usr/src/php/ext/zephir && tar xfz /tmp/zephir.tar.gz --strip-components=1 -C /usr/src/php/ext/zephir && \
+    # docker-php-ext-configure zephir && \
+    # docker-php-ext-install -j$(nproc) --ini-name 90_zephir.ini zephir && \
+    # # snappy
+    # curl -sfL https://github.com/kjdev/php-ext-snappy/archive/refs/tags/0.2.1.tar.gz -o /tmp/snappy.tar.gz && \
+    # mkdir /usr/src/php/ext/snappy && tar xfz /tmp/snappy.tar.gz --strip-components=1 -C /usr/src/php/ext/snappy && \
+    # docker-php-ext-configure snappy --with-snappy-includedir=/usr && \
+    # docker-php-ext-install -j$(nproc) --ini-name 10_snappy.ini snappy && \
     # 清理构建过程临时文件
     docker-php-source delete && apk del .build-deps && rm -rf /tmp/* && \
     # 链接常用路径

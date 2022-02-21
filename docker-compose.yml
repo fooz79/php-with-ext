@@ -6,7 +6,8 @@ services:
         build:
             dockerfile: Dockerfile
             args:
-                PHP_VERSION: 7.4.28
+                PHP_MAJOR: 7.4
+                PHP_MINOR: 28
                 RUNMODE: fpm
             target: build
 
@@ -15,6 +16,7 @@ services:
         build:
             dockerfile: Dockerfile
             args:
-                PHP_VERSION: 7.4.28
+                PHP_MAJOR: 7.4
+                PHP_MINOR: 28
                 RUNMODE: cli
             target: build

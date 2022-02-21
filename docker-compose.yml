@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+    7.4-fpm:
+        image: "fooz79/php-with-ext:7.4-fpm"
+        build:
+            dockerfile: Dockerfile
+            args:
+                PHP_VERSION: 7.4.28
+                RUNMODE: fpm
+            target: build
+
+    7.4-cli:
+        image: "fooz79/php-with-ext:7.4-cli"
+        build:
+            dockerfile: Dockerfile
+            args:
+                PHP_VERSION: 7.4.28
+                RUNMODE: cli
+            target: build

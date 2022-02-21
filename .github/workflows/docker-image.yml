@@ -1,16 +1,14 @@
-name: Docker Image CI
+name: release docker image
 
 on:
-  push:
-    branches: [ release ]
+    push:
+        branches: [release]
 
 jobs:
+    build:
+        runs-on: ubuntu-latest
 
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: docker compose build --no-cache
+        steps:
+            - uses: actions/checkout@v2
+            - name: Build the Docker image
+              run: docker compose build --no-cache -q

@@ -82,7 +82,7 @@ ARG EXTRA_ZEPHIR_VERSION=1.5.0
 
 RUN set -ex && \
     # 安装 Composer
-    curl -sfL https://github.com/composer/composer/releases/download/${COMPOSER_VER}/composer.phar -o /usr/bin/composer && \
+    curl -sfL https://mirrors.aliyun.com/composer/composer.phar -o /usr/bin/composer && \
     chmod +x /usr/bin/composer && composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/ && \
     # 修改 APK 源
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && \

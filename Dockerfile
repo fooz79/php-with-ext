@@ -244,6 +244,12 @@ RUN set -ex && \
     docker-php-ext-enable --ini-name 00_sodium.ini sodium && \
     docker-php-ext-enable --ini-name 00_opcache.ini opcache && \
     # 安装第三方扩展模块
+    if test ${EXTRA_APCU_ENABLE} = true; then \
+        curl -sfL https://github.com/krakjoe/apcu/archive/refs/tags/v${EXTRA_APCU_VERSION}.tar.gz -o /tmp/apcu.tar.gz && \
+        mkdir /usr/src/php/ext/apcu && tar xfz /tmp/apcu.tar.gz --strip-components=1 -C /usr/src/php/ext/apcu && \
+        docker-php-ext-configure apcu --enable-apcu-spinlocks && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-apcu.ini apcu; \
+    fi && \
     if test ${EXTRA_BROTLI_ENABLE} = true; then \
         curl -sfL https://github.com/kjdev/php-ext-brotli/archive/refs/tags/${EXTRA_BROTLI_VERSION}.tar.gz -o /tmp/brotli.tar.gz && \
         mkdir /usr/src/php/ext/brotli && tar xfz /tmp/brotli.tar.gz --strip-components=1 -C /usr/src/php/ext/brotli && \
@@ -253,11 +259,11 @@ RUN set -ex && \
         docker-php-ext-install -j$(nproc) --ini-name 10-brotli.ini brotli && \
         apk del .ext-brotli-deps; \
     fi && \
-    if test ${EXTRA_APCU_ENABLE} = true; then \
-        curl -sfL https://github.com/krakjoe/apcu/archive/refs/tags/v${EXTRA_APCU_VERSION}.tar.gz -o /tmp/apcu.tar.gz && \
-        mkdir /usr/src/php/ext/apcu && tar xfz /tmp/apcu.tar.gz --strip-components=1 -C /usr/src/php/ext/apcu && \
-        docker-php-ext-configure apcu --enable-apcu-spinlocks && \
-        docker-php-ext-install -j$(nproc) --ini-name 10-apcu.ini apcu; \
+    if test ${EXTRA_CSV_ENABLE} = true; then \
+        curl -sfL https://gitlab.com/Girgias/csv-php-extension/-/archive/${EXTRA_CSV_VERSION}/csv-php-extension-${EXTRA_CSV_VERSION}.tar.gz -o /tmp/csv.tar.gz && \
+        mkdir /usr/src/php/ext/csv && tar xfz /tmp/csv.tar.gz --strip-components=1 -C /usr/src/php/ext/csv && \
+        docker-php-ext-configure csv && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-csv.ini csv ; \
     fi && \
     if test ${EXTRA_EVENT_ENABLE} = true; then \
         git clone -q -b ${EXTRA_EVENT_VERSION} --depth 1 https://bitbucket.org/osmanov/pecl-event.git /usr/src/php/ext/event && \

@@ -301,8 +301,9 @@ RUN set -ex && \
         apk add --no-cache snappy icu-libs libsasl libcrypto1.1 zstd-libs && \
         apk add --no-cache --virtual .ext-mongodb-deps openssl-dev icu-dev snappy-dev zstd-dev cyrus-sasl-dev && \
         docker-php-ext-configure mongodb && \
-        docker-php-ext-install -j$(nproc) --ini-name 10-mongodb.ini mongodb ; \
-        apk del .ext-mongodb-deps; \    fi && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-mongodb.ini mongodb && \
+        apk del .ext-mongodb-deps; \
+    fi && \
     if test ${EXTRA_MSGPACK_ENABLE} = true; then \
         curl -sfL https://github.com/msgpack/msgpack-php/archive/refs/tags/msgpack-${EXTRA_MSGPACK_VERSION}.tar.gz -o /tmp/msgpack.tar.gz && \
         mkdir /usr/src/php/ext/msgpack && tar xfz /tmp/msgpack.tar.gz --strip-components=1 -C /usr/src/php/ext/msgpack && \

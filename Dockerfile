@@ -1,8 +1,8 @@
-ARG RUNMODE=fpm
+ARG ALPINE_VERSION=3.15
 ARG PHP_MAJOR="7.4"
 ARG PHP_MINOR=28
-ARG ALPINE_VERSION=3.15
-# 在 FROM 之后上述 ARG 会失效
+ARG RUNMODE=fpm
+# 在 FROM 之后 ARG 需要重新声明
 
 FROM php:${PHP_MAJOR}.${PHP_MINOR}-${RUNMODE}-alpine${ALPINE_VERSION}
 
@@ -29,7 +29,7 @@ ARG EXT_PGSQL_ENABLE=true
 ARG EXT_SHMOP_ENABLE=true
 ARG EXT_SNMP_ENABLE=true
 ARG EXT_SOAP_ENABLE=true
-ARG EXT_SOCKETS_ENABLE=false
+ARG EXT_SOCKETS_ENABLE=true
 ARG EXT_SEMAPHORE_ENABLE=true
 ARG EXT_TIDY_ENABLE=true
 ARG EXT_XSL_ENABLE=true
@@ -41,8 +41,6 @@ ARG EXTRA_APCU_ENABLE=true
 ARG EXTRA_APCU_VERSION=5.1.21
 ARG EXTRA_BROTLI_ENABLE=true
 ARG EXTRA_BROTLI_VERSION=0.13.1
-ARG EXTRA_COMPOSER_ENABLE=true
-ARG EXTRA_COMPOSER_VERSION=2.2.6
 ARG EXTRA_CSV_ENABLE=true
 ARG EXTRA_CSV_VERSION=0.4.1
 ARG EXTRA_EVENT_ENABLE=true
@@ -69,6 +67,8 @@ ARG EXTRA_PSR_ENABLE=true
 ARG EXTRA_PSR_VERSION=1.2.0
 ARG EXTRA_REDIS_ENABLE=true
 ARG EXTRA_REDIS_VERSION=5.3.7
+ARG EXTRA_SNAPPY_ENABLE=true
+ARG EXTRA_SNAPPY_VERSION=0.2.1
 ARG EXTRA_SWOOLE_ENABLE=true
 ARG EXTRA_SWOOLE_VERSION=4.8.7
 ARG EXTRA_UUID_ENABLE=true
@@ -84,8 +84,27 @@ RUN set -ex && \
     chmod +x /usr/bin/composer && composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/ && \
     # 修改 APK 源
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && \
-    apk update && apk upgrade && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS git
-RUN set -ex && \
+    apk update && apk upgrade && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS git && \
+    # 模块依赖关系
+    if test ${EXTRA_EVENT_ENABLE} = true; then \
+        EXT_SOCKETS_ENABLE=true; \
+    fi && \
+    if test ${EXTRA_SWOOLE_ENABLE} = true; then \
+        EXT_SOCKETS_ENABLE=true; \
+    fi && \
+    if test ${EXTRA_REDIS_ENABLE} = true; then \
+        EXT_SOCKETS_ENABLE=true; \
+        EXTRA_IGBINARY_ENABLE=true; \
+        EXTRA_LZ4_ENABLE=true; \
+        EXTRA_MSGPACK_ENABLE=true; \
+    fi && \
+    # PHP 版本特殊规则
+    if test ${PHP_MAJOR} = 7.4; then \
+        EXTRA_CSV_VERSION=0.3.1; \
+    fi && \
+    if test ${PHP_MAJOR} = 8.1; then \
+        EXTRA_PROTOBUF_ENABLE=false; \
+    fi && \
     # 安装 PHP 内置扩展模块
     docker-php-source extract && \
     if test ${EXT_BCMATH_ENABLE} = true; then \
@@ -216,32 +235,8 @@ RUN set -ex && \
     # 启用已安装 PHP 扩展
     rm -f /usr/local/etc/php/conf.d/docker-php-ext-sodium.ini && \
     docker-php-ext-enable --ini-name 00_sodium.ini sodium && \
-    docker-php-ext-enable --ini-name 00_opcache.ini opcache
-RUN \
+    docker-php-ext-enable --ini-name 00_opcache.ini opcache && \
     # 安装第三方扩展模块
-    if test ${EXTRA_AMQP_ENABLE} = true; then \
-        curl -sfL https://github.com/php-amqp/php-amqp/archive/refs/tags/v${EXTRA_AMQP_VERSION}.tar.gz -o /tmp/amqp.tar.gz && \
-        mkdir /usr/src/php/ext/amqp && tar xfz /tmp/amqp.tar.gz --strip-components=1 -C /usr/src/php/ext/amqp && \
-        apk add --no-cache rabbitmq-c && \
-        apk add --no-cache --virtual .ext-amqp-deps rabbitmq-c-dev && \
-        docker-php-ext-configure amqp && \
-        docker-php-ext-install -j$(nproc) --ini-name 20-amqp.ini amqp && \
-        apk del .ext-amqp-deps; \
-    fi && \
-    if test ${EXTRA_SWOOLE_ENABLE} = true; then \
-        if test ${EXT_SOCKETS_ENABLE} != true; then \
-            docker-php-ext-install -j$(nproc) --ini-name 00-sockets.ini sockets; \
-        fi && \
-        curl -sfL https://github.com/swoole/swoole-src/archive/v${EXTRA_SWOOLE_VERSION}.tar.gz -o /tmp/swoole.tar.gz && \
-        mkdir /usr/src/php/ext/swoole && tar xfz /tmp/swoole.tar.gz --strip-components=1 -C /usr/src/php/ext/swoole && \
-        apk add --no-cache brotli-libs libstdc++ && \
-        apk add --no-cache --virtual .ext-swoole-deps \
-            openssl-dev curl-dev brotli-dev pcre-dev && \
-        docker-php-ext-configure swoole \
-            --enable-sockets --enable-openssl --enable-http2 --enable-mysqlnd --enable-swoole-json --enable-swoole-curl && \
-        docker-php-ext-install -j$(nproc) --ini-name 80-swoole.ini swoole && \
-        apk del .ext-swoole-deps; \
-    fi && \
     if test ${EXTRA_BROTLI_ENABLE} = true; then \
         curl -sfL https://github.com/kjdev/php-ext-brotli/archive/refs/tags/${EXTRA_BROTLI_VERSION}.tar.gz -o /tmp/brotli.tar.gz && \
         mkdir /usr/src/php/ext/brotli && tar xfz /tmp/brotli.tar.gz --strip-components=1 -C /usr/src/php/ext/brotli && \
@@ -255,12 +250,9 @@ RUN \
         curl -sfL https://github.com/krakjoe/apcu/archive/refs/tags/v${EXTRA_APCU_VERSION}.tar.gz -o /tmp/apcu.tar.gz && \
         mkdir /usr/src/php/ext/apcu && tar xfz /tmp/apcu.tar.gz --strip-components=1 -C /usr/src/php/ext/apcu && \
         docker-php-ext-configure apcu --enable-apcu-spinlocks && \
-        docker-php-ext-install -j$(nproc) --ini-name 10-apcu.ini apcu && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-apcu.ini apcu; \
     fi && \
     if test ${EXTRA_EVENT_ENABLE} = true; then \
-        if test ${EXT_SOCKETS_ENABLE} != true; then \
-            docker-php-ext-install -j$(nproc) --ini-name 00-sockets.ini sockets; \
-        fi && \
         git clone -q -b ${EXTRA_EVENT_VERSION} --depth 1 https://bitbucket.org/osmanov/pecl-event.git /usr/src/php/ext/event && \
         apk add --no-cache libevent && \
         apk add --no-cache --virtual .ext-event-deps openssl-dev libevent-dev && \
@@ -323,15 +315,12 @@ RUN \
         apk del .ext-mcrypt-deps; \
     fi && \
     if test ${EXTRA_PROTOBUF_ENABLE} = true; then \
-        # protobuf v3.19 以下不支持 8.1
-        if test ${PHP_MAJOR} != "8.1"; then \
-            curl -sfL https://github.com/protocolbuffers/protobuf/releases/download/v${EXTRA_PROTOBUF_VERSION}/protobuf-php-${EXTRA_PROTOBUF_VERSION}.tar.gz -o /tmp/protobuf.tar.gz && \
-            mkdir /tmp/protobuf && tar xfz /tmp/protobuf.tar.gz --strip-components=1 -C /tmp/protobuf && \
-            mv /tmp/protobuf/php/ext/google/protobuf /usr/src/php/ext/ && \
-            apk add --no-cache protoc && \
-            docker-php-ext-configure protobuf && \
-            docker-php-ext-install -j$(nproc) --ini-name 10-protobuf.ini protobuf ; \
-        fi; \
+        curl -sfL https://github.com/protocolbuffers/protobuf/releases/download/v${EXTRA_PROTOBUF_VERSION}/protobuf-php-${EXTRA_PROTOBUF_VERSION}.tar.gz -o /tmp/protobuf.tar.gz && \
+        mkdir /tmp/protobuf && tar xfz /tmp/protobuf.tar.gz --strip-components=1 -C /tmp/protobuf && \
+        mv /tmp/protobuf/php/ext/google/protobuf /usr/src/php/ext/ && \
+        apk add --no-cache protoc && \
+        docker-php-ext-configure protobuf && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-protobuf.ini protobuf ; \
     fi && \
     if test ${EXTRA_PSR_ENABLE} = true; then \
         curl -sfL https://github.com/jbboehr/php-psr/archive/refs/tags/v${EXTRA_PSR_VERSION}.tar.gz -o /tmp/psr.tar.gz && \
@@ -348,6 +337,48 @@ RUN \
         docker-php-ext-install -j$(nproc) --ini-name 10-lz4.ini lz4 && \
         apk del .ext-lz4-deps; \
     fi && \
+    if test ${EXTRA_UUID_ENABLE} = true; then \
+        curl -sfL https://github.com/php/pecl-networking-uuid/archive/refs/tags/uuid-${EXTRA_UUID_VERSION}.tar.gz -o /tmp/uuid.tar.gz && \
+        mkdir /usr/src/php/ext/uuid && tar xfz /tmp/uuid.tar.gz --strip-components=1 -C /usr/src/php/ext/uuid && \
+        apk add --no-cache libuuid && \
+        apk add --no-cache --virtual .ext-uuid-deps util-linux-dev && \
+        docker-php-ext-configure uuid && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-uuid.ini uuid && \
+        apk del .ext-uuid-deps; \
+    fi && \
+    if test ${EXTRA_YAML_ENABLE} = true; then \
+        curl -sfL https://github.com/php/pecl-file_formats-yaml/archive/refs/tags/${EXTRA_YAML_VERSION}.tar.gz -o /tmp/yaml.tar.gz && \
+        mkdir /usr/src/php/ext/yaml && tar xfz /tmp/yaml.tar.gz --strip-components=1 -C /usr/src/php/ext/yaml && \
+        apk add --no-cache yaml && \
+        apk add --no-cache --virtual .ext-yaml-deps yaml-dev && \
+        docker-php-ext-configure yaml && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-yaml.ini yaml; \
+        apk del .ext-yaml-deps; \
+    fi && \
+    if test ${EXTRA_CSV_ENABLE} = true; then \
+        curl -sfL https://gitlab.com/Girgias/csv-php-extension/-/archive/${EXTRA_CSV_VERSION}/csv-php-extension-${EXTRA_CSV_VERSION}.tar.gz -o /tmp/csv.tar.gz && \
+        mkdir /usr/src/php/ext/csv && tar xfz /tmp/csv.tar.gz --strip-components=1 -C /usr/src/php/ext/csv && \
+        docker-php-ext-configure csv && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-csv.ini csv ; \
+    fi && \
+    if test ${EXTRA_SNAPPY_ENABLE} = true; then \
+    curl -sfL https://github.com/kjdev/php-ext-snappy/archive/refs/tags/${EXTRA_SNAPPY_VERSION}.tar.gz -o /tmp/snappy.tar.gz && \
+    mkdir /usr/src/php/ext/snappy && tar xfz /tmp/snappy.tar.gz --strip-components=1 -C /usr/src/php/ext/snappy && \
+        apk add --no-cache snappy && \
+        apk add --no-cache --virtual .ext-snappy-deps snappy-dev && \
+        docker-php-ext-configure snappy --with-snappy-includedir=/usr && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-snappy.ini snappy && \
+        apk del .ext-snappy-deps; \
+    fi && \
+    if test ${EXTRA_AMQP_ENABLE} = true; then \
+        curl -sfL https://github.com/php-amqp/php-amqp/archive/refs/tags/v${EXTRA_AMQP_VERSION}.tar.gz -o /tmp/amqp.tar.gz && \
+        mkdir /usr/src/php/ext/amqp && tar xfz /tmp/amqp.tar.gz --strip-components=1 -C /usr/src/php/ext/amqp && \
+        apk add --no-cache rabbitmq-c && \
+        apk add --no-cache --virtual .ext-amqp-deps rabbitmq-c-dev && \
+        docker-php-ext-configure amqp && \
+        docker-php-ext-install -j$(nproc) --ini-name 20-amqp.ini amqp && \
+        apk del .ext-amqp-deps; \
+    fi && \
     if test ${EXTRA_REDIS_ENABLE} = true; then \
         curl -sfL https://github.com/phpredis/phpredis/archive/refs/tags/${EXTRA_REDIS_VERSION}.tar.gz -o /tmp/redis.tar.gz && \
         mkdir /usr/src/php/ext/redis && tar xfz /tmp/redis.tar.gz --strip-components=1 -C /usr/src/php/ext/redis && \
@@ -359,35 +390,26 @@ RUN \
         docker-php-ext-install -j$(nproc) --ini-name 20-redis.ini redis && \
         apk del .ext-redis-deps; \
     fi && \
-    # curl -sfL https://github.com/php/pecl-networking-uuid/archive/refs/tags/uuid-${UUID}.tar.gz -o /tmp/uuid.tar.gz && \
-    # mkdir /usr/src/php/ext/uuid && tar xfz /tmp/uuid.tar.gz --strip-components=1 -C /usr/src/php/ext/uuid && \
-    # docker-php-ext-configure uuid && \
-    # docker-php-ext-install -j$(nproc) --ini-name 10_uuid.ini uuid && \
-    # # yaml
-    # curl -sfL https://github.com/php/pecl-file_formats-yaml/archive/refs/tags/${YAML}.tar.gz -o /tmp/yaml.tar.gz && \
-    # mkdir /usr/src/php/ext/yaml && tar xfz /tmp/yaml.tar.gz --strip-components=1 -C /usr/src/php/ext/yaml && \
-    # docker-php-ext-configure yaml && \
-    # docker-php-ext-install -j$(nproc) --ini-name 10_yaml.ini yaml && \
-    # # csv
-    # curl -sfL https://gitlab.com/Girgias/csv-php-extension/-/archive/${CSV}/csv-php-extension-${CSV}.tar.gz -o /tmp/csv.tar.gz && \
-    # mkdir /usr/src/php/ext/csv && tar xfz /tmp/csv.tar.gz --strip-components=1 -C /usr/src/php/ext/csv && \
-    # docker-php-ext-configure csv && \
-    # docker-php-ext-install -j$(nproc) --ini-name 10_csv.ini csv && \
-    # # zephir-parser
-    # curl -sfL https://github.com/zephir-lang/php-zephir-parser/archive/refs/tags/v${ZEPHIR}.tar.gz -o /tmp/zephir.tar.gz && \
-    # mkdir /usr/src/php/ext/zephir && tar xfz /tmp/zephir.tar.gz --strip-components=1 -C /usr/src/php/ext/zephir && \
-    # docker-php-ext-configure zephir && \
-    # docker-php-ext-install -j$(nproc) --ini-name 90_zephir.ini zephir && \
-    # # snappy
-    # curl -sfL https://github.com/kjdev/php-ext-snappy/archive/refs/tags/0.2.1.tar.gz -o /tmp/snappy.tar.gz && \
-    # mkdir /usr/src/php/ext/snappy && tar xfz /tmp/snappy.tar.gz --strip-components=1 -C /usr/src/php/ext/snappy && \
-    # docker-php-ext-configure snappy --with-snappy-includedir=/usr && \
-    # docker-php-ext-install -j$(nproc) --ini-name 10_snappy.ini snappy && \
+    if test ${EXTRA_SWOOLE_ENABLE} = true; then \
+        curl -sfL https://github.com/swoole/swoole-src/archive/v${EXTRA_SWOOLE_VERSION}.tar.gz -o /tmp/swoole.tar.gz && \
+        mkdir /usr/src/php/ext/swoole && tar xfz /tmp/swoole.tar.gz --strip-components=1 -C /usr/src/php/ext/swoole && \
+        apk add --no-cache brotli-libs libstdc++ && \
+        apk add --no-cache --virtual .ext-swoole-deps \
+            openssl-dev curl-dev brotli-dev pcre-dev && \
+        docker-php-ext-configure swoole \
+            --enable-sockets --enable-openssl --enable-http2 --enable-mysqlnd --enable-swoole-json --enable-swoole-curl && \
+        docker-php-ext-install -j$(nproc) --ini-name 80-swoole.ini swoole && \
+        apk del .ext-swoole-deps; \
+    fi && \
+    if test ${EXTRA_ZEPHIR_ENABLE} = true; then \
+        curl -sfL https://github.com/zephir-lang/php-zephir-parser/archive/refs/tags/v${EXTRA_ZEPHIR_VERSION}.tar.gz -o /tmp/zephir.tar.gz && \
+        mkdir /usr/src/php/ext/zephir && tar xfz /tmp/zephir.tar.gz --strip-components=1 -C /usr/src/php/ext/zephir && \
+        docker-php-ext-configure zephir && \
+        docker-php-ext-install -j$(nproc) --ini-name 90-zephir.ini zephir; \
+    fi && \
     # 清理构建过程临时文件
     docker-php-source delete && apk del .build-deps && rm -rf /tmp/* && \
     # 链接常用路径
     ln -s /usr/local/bin/php /usr/bin/ && \
     ln -s /usr/local/etc/php /etc/ && \
     ln -s /usr/local/etc/php-fpm.d /etc/
-
-WORKDIR /usr/src/php/ext

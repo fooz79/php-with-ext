@@ -107,13 +107,6 @@ RUN set -ex && \
         EXTRA_PROTOBUF_ENABLE=false; \
     fi && \
     # 安装 PHP 内置扩展模块
-    docker-php-source extract && \
-    if test ${EXTRA_CSV_ENABLE} = true; then \
-        curl -sfL https://gitlab.com/Girgias/csv-php-extension/-/archive/${EXTRA_CSV_VERSION}/csv-php-extension-${EXTRA_CSV_VERSION}.tar.gz -o /tmp/csv.tar.gz && \
-        mkdir /usr/src/php/ext/csv && tar xfz /tmp/csv.tar.gz --strip-components=1 -C /usr/src/php/ext/csv && \
-        docker-php-ext-configure csv && \
-        docker-php-ext-install -j$(nproc) --ini-name 10-csv.ini csv ; \
-    fi && \
     if test ${EXT_BCMATH_ENABLE} = true; then \
         docker-php-ext-install -j$(nproc) --ini-name 00-bcmath.ini bcmath; \
     fi && \

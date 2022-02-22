@@ -7,7 +7,6 @@ ARG RUNMODE=fpm
 FROM php:${PHP_MAJOR}.${PHP_MINOR}-${RUNMODE}-alpine${ALPINE_VERSION}
 
 # 镜像构建时 PHP 默认版本
-ARG COMPOSER_VER=2.2.6
 ARG PHP_MAJOR="8.1"
 ARG PHP_MINOR=3
 ENV PHP_VERSION ${PHP_MAJOR}.${PHP_MINOR}
@@ -59,6 +58,8 @@ ARG EXTRA_MCRYPT_ENABLE=true
 ARG EXTRA_MCRYPT_VERSION=1.0.4
 ARG EXTRA_MONGODB_ENABLE=true
 ARG EXTRA_MONGODB_VERSION=1.12.0
+ARG EXTRA_MONGODB_LIBMONGOC_VERSION=1.21.0
+ARG EXTRA_MONGODB_LIBMONGOCRYPT_VERSION=1.30.0
 ARG EXTRA_MSGPACK_ENABLE=true
 ARG EXTRA_MSGPACK_VERSION=2.1.2
 ARG EXTRA_PROTOBUF_ENABLE=true
@@ -80,7 +81,7 @@ ARG EXTRA_ZEPHIR_VERSION=1.5.0
 
 RUN set -ex && \
     # 安装 Composer
-    curl -sfL https://github.com/composer/composer/releases/download/${COMPOSER_VER}/composer.phar -o /usr/bin/composer && \
+    curl -sfL https://mirrors.aliyun.com/composer/composer.phar -o /usr/bin/composer && \
     chmod +x /usr/bin/composer && composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/ && \
     # 修改 APK 源
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && \
@@ -291,14 +292,17 @@ RUN set -ex && \
         apk del .ext-liblzf-deps; \
     fi && \
     if test ${EXTRA_MONGODB_ENABLE} = true; then \
-        git clone -q -b ${EXTRA_MONGODB_VERSION} --depth 1 https://github.com/mongodb/mongo-php-driver.git /usr/src/php/ext/mongodb && \
-        cd /usr/src/php/ext/mongodb && git submodule update --init --recommend-shallow --single-branch && \
+        curl -sfL https://github.com/mongodb/mongo-php-driver/archive/refs/tags/${EXTRA_MONGODB_VERSION}.tar.gz -o /tmp/mongodb.tar.gz && \
+        mkdir /usr/src/php/ext/mongodb && tar xfz /tmp/mongodb.tar.gz --strip-components=1 -C /usr/src/php/ext/mongodb && \
+        curl -sfL https://github.com/mongodb/mongo-c-driver/archive/refs/tags/${EXTRA_MONGODB_LIBMONGOC_VERSION}.tar.gz -o /tmp/libmongoc.tar.gz && \
+        tar xfz /tmp/libmongoc.tar.gz --strip-components=1 -C /usr/src/php/ext/mongodb/src/libmongoc && \
+        curl -sfL https://github.com/mongodb/libmongocrypt/archive/refs/tags/${EXTRA_MONGODB_LIBMONGOCRYPT_VERSION}.tar.gz -o /tmp/libmongocrypt.tar.gz && \
+        tar xfz /tmp/libmongocrypt.tar.gz --strip-components=1 -C /usr/src/php/ext/mongodb/src/libmongocrypt && \
         apk add --no-cache snappy icu-libs libsasl libcrypto1.1 zstd-libs && \
         apk add --no-cache --virtual .ext-mongodb-deps openssl-dev icu-dev snappy-dev zstd-dev cyrus-sasl-dev && \
         docker-php-ext-configure mongodb && \
         docker-php-ext-install -j$(nproc) --ini-name 10-mongodb.ini mongodb ; \
-        apk del .ext-mongodb-deps; \
-    fi && \
+        apk del .ext-mongodb-deps; \    fi && \
     if test ${EXTRA_MSGPACK_ENABLE} = true; then \
         curl -sfL https://github.com/msgpack/msgpack-php/archive/refs/tags/msgpack-${EXTRA_MSGPACK_VERSION}.tar.gz -o /tmp/msgpack.tar.gz && \
         mkdir /usr/src/php/ext/msgpack && tar xfz /tmp/msgpack.tar.gz --strip-components=1 -C /usr/src/php/ext/msgpack && \

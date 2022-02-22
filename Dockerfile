@@ -292,7 +292,7 @@ RUN set -ex && \
     fi && \
     if test ${EXTRA_MONGODB_ENABLE} = true; then \
         git clone -q -b ${EXTRA_MONGODB_VERSION} --depth 1 https://github.com/mongodb/mongo-php-driver.git /usr/src/php/ext/mongodb && \
-        cd /usr/src/php/ext/mongodb && git submodule update --init && \
+        cd /usr/src/php/ext/mongodb && git submodule update --init --recommend-shallow --single-branch && \
         apk add --no-cache snappy icu-libs libsasl libcrypto1.1 zstd-libs && \
         apk add --no-cache --virtual .ext-mongodb-deps openssl-dev icu-dev snappy-dev zstd-dev cyrus-sasl-dev && \
         docker-php-ext-configure mongodb && \

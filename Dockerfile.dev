@@ -302,7 +302,7 @@ RUN set -ex && \
         apk add --no-cache snappy icu-libs libsasl libcrypto1.1 zstd-libs && \
         apk add --no-cache --virtual .ext-mongodb-deps openssl-dev icu-dev snappy-dev zstd-dev cyrus-sasl-dev && \
         docker-php-ext-configure mongodb && \
-        docker-php-ext-install -j$(nproc) --ini-name 10-mongodb.ini mongodb ; \
+        docker-php-ext-install -j$(nproc) --ini-name 10-mongodb.ini mongodb && \
         apk del .ext-mongodb-deps; \
     fi && \
     if test ${EXTRA_MSGPACK_ENABLE} = true; then \

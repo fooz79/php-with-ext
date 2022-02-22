@@ -1,4 +1,4 @@
-name: release docker image
+name: build and release
 
 on:
     push:
@@ -11,4 +11,4 @@ jobs:
         steps:
             - uses: actions/checkout@v2
             - name: Build the Docker image
-              run: docker compose build --no-cache -q
+              run: docker build -f Dockerfile.dev --no-cache --compress -t fooz79/php-with-ext:demo

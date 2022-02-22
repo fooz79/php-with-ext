@@ -100,10 +100,10 @@ RUN set -ex && \
         EXTRA_MSGPACK_ENABLE=true; \
     fi && \
     # PHP 版本特殊规则
-    if test ${PHP_MAJOR} = 7.4; then \
+    if test ${PHP_MAJOR} = "7.4"; then \
         EXTRA_CSV_VERSION=0.3.1; \
     fi && \
-    if test ${PHP_MAJOR} = 8.1; then \
+    if test ${PHP_MAJOR} = "8.1"; then \
         EXTRA_PROTOBUF_ENABLE=false; \
     fi && \
     # 安装 PHP 内置扩展模块

@@ -100,10 +100,10 @@ RUN set -ex && \
         EXTRA_MSGPACK_ENABLE=true; \
     fi && \
     # PHP 版本特殊规则
-    if test ${PHP_MAJOR} = "7.4"; then \
+    if test ${PHP_MAJOR} = 7.4; then \
         EXTRA_CSV_VERSION=0.3.1; \
     fi && \
-    if test ${PHP_MAJOR} = "8.1"; then \
+    if test ${PHP_MAJOR} = 8.1; then \
         EXTRA_PROTOBUF_ENABLE=false; \
     fi && \
     # 安装 PHP 内置扩展模块
@@ -238,6 +238,12 @@ RUN set -ex && \
     docker-php-ext-enable --ini-name 00_sodium.ini sodium && \
     docker-php-ext-enable --ini-name 00_opcache.ini opcache && \
     # 安装第三方扩展模块
+    if test ${EXTRA_CSV_ENABLE} = true; then \
+        curl -sfL https://gitlab.com/Girgias/csv-php-extension/-/archive/${EXTRA_CSV_VERSION}/csv-php-extension-${EXTRA_CSV_VERSION}.tar.gz -o /tmp/csv.tar.gz && \
+        mkdir /usr/src/php/ext/csv && tar xfz /tmp/csv.tar.gz --strip-components=1 -C /usr/src/php/ext/csv && \
+        docker-php-ext-configure csv && \
+        docker-php-ext-install -j$(nproc) --ini-name 10-csv.ini csv ; \
+    fi && \
     if test ${EXTRA_BROTLI_ENABLE} = true; then \
         curl -sfL https://github.com/kjdev/php-ext-brotli/archive/refs/tags/${EXTRA_BROTLI_VERSION}.tar.gz -o /tmp/brotli.tar.gz && \
         mkdir /usr/src/php/ext/brotli && tar xfz /tmp/brotli.tar.gz --strip-components=1 -C /usr/src/php/ext/brotli && \
@@ -359,12 +365,6 @@ RUN set -ex && \
         docker-php-ext-configure yaml && \
         docker-php-ext-install -j$(nproc) --ini-name 10-yaml.ini yaml; \
         apk del .ext-yaml-deps; \
-    fi && \
-    if test ${EXTRA_CSV_ENABLE} = true; then \
-        curl -sfL https://gitlab.com/Girgias/csv-php-extension/-/archive/${EXTRA_CSV_VERSION}/csv-php-extension-${EXTRA_CSV_VERSION}.tar.gz -o /tmp/csv.tar.gz && \
-        mkdir /usr/src/php/ext/csv && tar xfz /tmp/csv.tar.gz --strip-components=1 -C /usr/src/php/ext/csv && \
-        docker-php-ext-configure csv && \
-        docker-php-ext-install -j$(nproc) --ini-name 10-csv.ini csv ; \
     fi && \
     if test ${EXTRA_SNAPPY_ENABLE} = true; then \
     curl -sfL https://github.com/kjdev/php-ext-snappy/archive/refs/tags/${EXTRA_SNAPPY_VERSION}.tar.gz -o /tmp/snappy.tar.gz && \

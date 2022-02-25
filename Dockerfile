@@ -107,6 +107,7 @@ RUN set -ex && \
         EXTRA_PROTOBUF_ENABLE=false; \
     fi && \
     # 安装 PHP 内置扩展模块
+    docker-php-source extract && \
     if test ${EXT_BCMATH_ENABLE} = true; then \
         docker-php-ext-install -j$(nproc) --ini-name 00-bcmath.ini bcmath; \
     fi && \
